@@ -1,0 +1,38 @@
+for i = TableLength(upgradeOptions), GetTotalLootChoices() - 1 do
+		local validRarities =
+		{
+			Rare = not IsEmpty(rarityTable.Rare),
+			Epic = not IsEmpty(rarityTable.Epic),
+			Heroic = not IsEmpty(rarityTable.Heroic),
+			Legendary = not IsEmpty(rarityTable.Legendary),
+		}
+
+		local chosenUpgrade = nil
+		local chosenRarity = "Common"
+		if validRarities.Rare and lootData.RarityChances.Rare then
+			chosenRarity = "Rare"
+			chosenUpgrade = GetRandomValue( rarityTable.Rare )
+		elseif validRarities.Epic and lootData.RarityChances.Epic then
+			chosenRarity = "Epic"
+			chosenUpgrade = GetRandomValue( rarityTable.Epic )
+		elseif validRarities.Heroic and lootData.RarityChances.Heroic then
+			chosenRarity = "Heroic"
+			chosenUpgrade = GetRandomValue( rarityTable.Heroic )
+		elseif validRarities.Legendary and lootData.RarityChances.Legendary then
+			chosenRarity = "Legendary"
+			chosenUpgrade = GetRandomValue( rarityTable.Legendary )
+		else
+			chosenRarity = "Common"
+			chosenUpgrade = GetRandomValue( rarityTable.Common )
+		end
+		
+		if chosenUpgrade then
+			chosenUpgrade.Rarity = chosenRarity
+			table.insert(upgradeOptions, chosenUpgrade)
+			rarityTable.Legendary[chosenUpgrade.ItemName] = nil
+			rarityTable.Heroic[chosenUpgrade.ItemName] = nil
+			rarityTable.Epic[chosenUpgrade.ItemName] = nil
+			rarityTable.Rare[chosenUpgrade.ItemName] = nil
+			rarityTable.Common[chosenUpgrade.ItemName] = nil
+		end
+	end

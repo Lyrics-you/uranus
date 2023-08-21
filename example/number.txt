@@ -1,0 +1,12 @@
+one
+two
+3
+four
+five
+six
+seven
+eight
+nine
+
+Costs={-1,-1,-1,-1,-1}
+if not IsEmpty( fishingPoints ) and IsFishingEligible( currentRun, currentRoom ) then

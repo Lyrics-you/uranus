@@ -1,0 +1,45 @@
+# checking the interval between configuration file changes
+refresh_rate: 300 seconds
+
+# appender Responsible for collecting logs to a console or file, multiple configurable
+appenders:
+  console:
+    kind: console
+    encoder:
+      pattern: "[{d(%Y-%m-%d %H:%M:%S.%s):23.23}][{f}:{L} @{M}][{P}][{l}] {m}{n}"
+
+  file:
+    kind: file
+    path: "logs/uranus.log"
+    encoder:
+      pattern: "[{d(%Y-%m-%d %H:%M:%S.%s):23.23}][{f}:{L} @{M}][{P}][{l}] {m}{n}"
+
+  rolling_file:
+    kind: rolling_file
+    path: "logs/uranus.log"
+    encoder:
+      pattern: "[{d(%Y-%m-%d %H:%M:%S.%s):23.23}][{f}:{L} @{M}][{P}][{l}] {m}{n}"
+    policy:
+      trigger:
+        # limiting file size
+        kind: size
+        limit: 1mb
+      roller:
+        kind: delete
+
+# configure the global log
+root:
+  # trace < debug < info < warn < error
+  level: error
+  appenders:
+    - console
+    - file
+
+# configuration the specific projects, optional
+loggers:
+  uranus::pannel:
+    level: info
+    
+  uranus::components:
+    level: debug
+

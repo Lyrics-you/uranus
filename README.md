@@ -46,6 +46,12 @@ URANUS 提供了6种修改：
 
 
 
+Note: Please pick the `Scripts` floder in the game directory before using the mod.
+
+注意：选择mod前请选中游戏目录下的Scripts文件夹。
+
+
+
 More Mods can refer to "https://github.com/xuqifzz/hades-mod-tutorial"。
 
 更多的修改可以参考"https://github.com/xuqifzz/hades-mod-tutorial"。

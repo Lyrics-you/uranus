@@ -1,22 +1,19 @@
 use crate::assemble::Assemble;
-use crate::components::Charism;
-
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::toast::{self, Status, Toast};
 
 use iced::font::{self, Font};
 use iced::theme::Palette;
 use iced::widget::{
-    button, checkbox, column, container, image, row, text, tooltip, Image, Text, Tooltip,
+    self, button, checkbox, column, container, image, row, text, tooltip, Image, Text, Tooltip,
 };
-use iced::{executor, window, Color};
+use iced::{executor, keyboard, subscription, window, Color, Event, Subscription};
 use iced::{Application, Command, Element, Length, Settings, Theme};
 
 use rfd::FileDialog;
 
 // CONST
-const ICON_FONT: Font = Font::with_name("icons");
-const YY_FONT: Font = Font {
+pub const ICON_FONT: Font = Font::with_name("icons");
+pub const YY_FONT: Font = Font {
     family: iced::font::Family::Name("YouYuan"),
     weight: font::Weight::Normal,
     stretch: font::Stretch::Normal,
@@ -62,28 +59,79 @@ struct Pannel<'a> {
     roolback_checkbox: bool,
     pub assemble: Assemble<'a>,
     hades_path: String,
+    toasts: Vec<Toast>,
 }
 
 impl Pannel<'_> {
-    pub fn checkbox_selector(value: bool, charism: &Rc<RefCell<Charism>>) {
-        // todo : Toast
-        let charism = charism.borrow();
+    pub fn checkbox_selector(&mut self, value: bool, message: Message) {
+        self.roolback_checkbox = false;
+        let (checkbox_ptr, charism) = match message {
+            Message::AlwaysFishingPointChecked(_) => (
+                &mut self.always_fishing_point_checkbox,
+                self.assemble.always_fishing_point_charism.borrow(),
+            ),
+            Message::CatchBetterFishChecked(_) => (
+                &mut self.catch_better_fish_checkbox,
+                self.assemble.catch_better_fish_charism.borrow(),
+            ),
+            Message::EasierToPickUpCheced(_) => (
+                &mut self.easier_to_pick_up_checkbox,
+                self.assemble.easier_to_pick_up_charism.borrow(),
+            ),
+            Message::GifitTraitQuickUpgradeChecked(_) => (
+                &mut self.gifit_trait_quick_upgrade_checkbox,
+                self.assemble.gifit_trait_quick_upgrade_charism.borrow(),
+            ),
+            Message::FreeStoreExchangeChecked(_) => (
+                &mut self.free_store_exchange_checkbox,
+                self.assemble.free_store_exchange_charism.borrow(),
+            ),
+            Message::AlwaysHeroRaityTraitChecked(_) => (
+                &mut self.always_hero_raity_trait_checkbox,
+                self.assemble.always_hero_raity_trait_charism.borrow(),
+            ),
+            _ => {
+                return;
+            }
+        };
+        *checkbox_ptr = value;
         if value {
             match charism.apply() {
                 Ok(_) => {
                     log::info!("Pannel: {} apply success.", charism.name);
+                    self.toasts.push(Toast {
+                        title: "Apply".into(),
+                        body: "success".into(),
+                        status: Status::Success,
+                    });
                 }
                 Err(err) => {
-                    log::error!("Pannel: {} apply failed!", err)
+                    log::error!("Pannel: {} apply failed!", err);
+                    *checkbox_ptr = false;
+                    self.toasts.push(Toast {
+                        title: "Apply".into(),
+                        body: "failed".into(),
+                        status: Status::Danger,
+                    });
                 }
             }
         } else {
             match charism.rollback(true) {
                 Ok(_) => {
                     log::info!("Pannel: {} rollback success.", charism.name);
+                    self.toasts.push(Toast {
+                        title: "RollBack".into(),
+                        body: "success".into(),
+                        status: Status::Success,
+                    });
                 }
                 Err(err) => {
-                    log::error!("Pannel: {} rollback failed!", err)
+                    log::error!("Pannel: {} rollback failed!", err);
+                    self.toasts.push(Toast {
+                        title: "RollBack".into(),
+                        body: "failed".into(),
+                        status: Status::Danger,
+                    });
                 }
             }
         }
@@ -100,6 +148,8 @@ enum Message {
     FreeStoreExchangeChecked(bool),
     AlwaysHeroRaityTraitChecked(bool),
     RollbackChecked(bool),
+    ToastClose(usize),
+    Event(Event),
     SourceLoaded(Result<(), font::Error>),
 }
 
@@ -125,6 +175,10 @@ impl Application for Pannel<'_> {
         String::from("Uranus - Hades")
     }
 
+    fn subscription(&self) -> Subscription<Self::Message> {
+        subscription::events().map(Message::Event)
+    }
+
     fn theme(&self) -> Self::Theme {
         let palette = Palette {
             background: Color::from_rgb(32 as f32 / 255.0, 34 as f32 / 255.0, 37 as f32 / 255.0),
@@ -137,19 +191,22 @@ impl Application for Pannel<'_> {
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
-        // check hades path
-        match message {
-            Message::FloderPickPressed | Message::SourceLoaded(_) => {}
-            _ => {
-                if self.hades_path == "" {
-                    log::warn!("Pick Floder First!");
-                    return Command::none();
-                }
-            }
-        }
         // select message
         match message {
             Message::SourceLoaded(_) => {}
+            Message::Event(Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code: keyboard::KeyCode::Tab,
+                modifiers,
+            })) if modifiers.shift() => {
+                return widget::focus_previous();
+            }
+            Message::Event(Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code: keyboard::KeyCode::Tab,
+                ..
+            })) => {
+                return widget::focus_next();
+            }
+            Message::Event(_) => {}
             Message::FloderPickPressed => {
                 if let Some(floder_path) = FileDialog::new().pick_folder() {
                     let path = floder_path.display().to_string();
@@ -164,74 +221,56 @@ impl Application for Pannel<'_> {
                     log::info!("Change Path to {}", self.assemble.hades_path)
                 }
             }
-            Message::AlwaysFishingPointChecked(value) => {
-                self.always_fishing_point_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.always_fishing_point_charism);
+            Message::ToastClose(_index) => {
+                // self.toasts.remove(_index);
+                self.toasts.clear();
             }
-            Message::CatchBetterFishChecked(value) => {
-                self.catch_better_fish_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.always_fishing_point_charism);
-            }
-
-            Message::EasierToPickUpCheced(value) => {
-                self.easier_to_pick_up_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.easier_to_pick_up_charism);
-            }
-            Message::GifitTraitQuickUpgradeChecked(value) => {
-                self.gifit_trait_quick_upgrade_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.gifit_trait_quick_upgrade_charism);
-            }
-            Message::FreeStoreExchangeChecked(value) => {
-                self.free_store_exchange_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.free_store_exchange_charism);
-            }
-            Message::AlwaysHeroRaityTraitChecked(value) => {
-                self.always_hero_raity_trait_checkbox = value;
-                self.roolback_checkbox = false;
-                Self::checkbox_selector(value, &self.assemble.always_hero_raity_trait_charism);
+            Message::AlwaysFishingPointChecked(value)
+            | Message::CatchBetterFishChecked(value)
+            | Message::EasierToPickUpCheced(value)
+            | Message::GifitTraitQuickUpgradeChecked(value)
+            | Message::FreeStoreExchangeChecked(value)
+            | Message::AlwaysHeroRaityTraitChecked(value) => {
+                if self.hades_path == "" {
+                    log::warn!("Pick Floder First!");
+                    let toast = Toast {
+                        title: "Tips".into(),
+                        body: "Pick Floder First".into(),
+                        status: Status::Primary,
+                    };
+                    self.toasts.push(toast);
+                    return Command::none();
+                }
+                self.checkbox_selector(value, message);
             }
             Message::RollbackChecked(value) => {
                 self.roolback_checkbox = value;
                 if value {
                     if self.always_fishing_point_checkbox {
-                        self.always_fishing_point_checkbox = false;
-                        Self::checkbox_selector(false, &self.assemble.always_fishing_point_charism);
+                        self.checkbox_selector(false, Message::AlwaysFishingPointChecked(false))
                     }
 
                     if self.catch_better_fish_checkbox {
-                        self.catch_better_fish_checkbox = false;
-                        Self::checkbox_selector(false, &self.assemble.catch_better_fish_charism);
+                        self.checkbox_selector(false, Message::CatchBetterFishChecked(false));
                     };
 
                     if self.easier_to_pick_up_checkbox {
-                        self.easier_to_pick_up_checkbox = false;
-                        Self::checkbox_selector(false, &self.assemble.easier_to_pick_up_charism);
+                        self.checkbox_selector(false, Message::EasierToPickUpCheced(false));
                     };
 
                     if self.gifit_trait_quick_upgrade_checkbox {
-                        self.gifit_trait_quick_upgrade_checkbox = false;
-                        Self::checkbox_selector(
+                        self.checkbox_selector(
                             false,
-                            &self.assemble.gifit_trait_quick_upgrade_charism,
+                            Message::GifitTraitQuickUpgradeChecked(false),
                         );
                     };
 
                     if self.free_store_exchange_checkbox {
-                        self.free_store_exchange_checkbox = false;
-                        Self::checkbox_selector(false, &self.assemble.free_store_exchange_charism);
+                        self.checkbox_selector(false, Message::FreeStoreExchangeChecked(false));
                     };
 
                     if self.always_hero_raity_trait_checkbox {
-                        self.always_hero_raity_trait_checkbox = false;
-                        Self::checkbox_selector(
-                            false,
-                            &self.assemble.always_hero_raity_trait_charism,
-                        );
+                        self.checkbox_selector(false, Message::AlwaysHeroRaityTraitChecked(false));
                     };
                 }
             }
@@ -406,18 +445,19 @@ impl Application for Pannel<'_> {
             always_hero_raity_trait_tip
         ];
 
-        let rollback_checkbox =
-            checkbox("", self.roolback_checkbox, Message::RollbackChecked)
-                .icon(checkbox::Icon {
-                    font: ICON_FONT,
-                    code_point: '\u{e901}',
-                    size: None,
-                    line_height: text::LineHeight::Relative(1.0),
-                    shaping: text::Shaping::Basic,
-                })
-                .font(YY_FONT);
+        let rollback_checkbox = checkbox("", self.roolback_checkbox, Message::RollbackChecked)
+            .icon(checkbox::Icon {
+                font: ICON_FONT,
+                code_point: '\u{e901}',
+                size: None,
+                line_height: text::LineHeight::Relative(1.0),
+                shaping: text::Shaping::Basic,
+            })
+            .font(YY_FONT);
         let rollback_text = Text::new("RollBack").font(YY_FONT).style(GREEN_COLOR);
         let rollback = row![rollback_checkbox, rollback_text];
+
+        // toast
 
         let content = column![
             image,
@@ -432,12 +472,15 @@ impl Application for Pannel<'_> {
         ]
         .spacing(24);
 
-        container(content)
+        let container = container(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
             .center_y()
             // .padding(24)
+            ;
+        toast::Manager::new(container, &self.toasts, Message::ToastClose)
+            .timeout(1)
             .into()
     }
 }

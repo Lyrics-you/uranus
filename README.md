@@ -8,7 +8,7 @@ Its shown below:
 
 展示如下：
 
-<img src="resources/uranus.png" alt="uranus" style="zoom:50%;" />
+![uranus](resources/uranus.png)
 
 URANUS offers 6 mods.
 

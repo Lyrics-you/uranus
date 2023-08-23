@@ -20,6 +20,8 @@ pub const YY_FONT: Font = Font {
     monospaced: false,
 };
 
+const FONT_SIZE:f32 = 24.0;
+
 const TIP_SIZE: f32 = 16.0;
 const TIP_POSITION: iced::widget::tooltip::Position = tooltip::Position::FollowCursor;
 
@@ -35,7 +37,7 @@ pub fn pannel_main() -> iced::Result {
     let mut settings = Settings::default();
 
     let mut window_settings: window::Settings = window::Settings::default();
-    window_settings.size = (400, 600);
+    window_settings.size = (600, 800);
     window_settings.resizable = false;
     settings.window = window_settings;
 
@@ -285,9 +287,9 @@ impl Application for Pannel<'_> {
         //     env!("CARGO_MANIFEST_DIR")
         // ));
         let image =
-            Image::<image::Handle>::new("resources/zagreus-icon-2.jpg").width(Length::Fixed(300.0));
+            Image::<image::Handle>::new("resources/zagreus-icon-2.jpg").width(Length::Fixed(500.0));
 
-        let text = text("Path").size(16).font(YY_FONT).style(ORANGE_COLOR);
+        let text = text("Path").size(FONT_SIZE).font(YY_FONT).style(ORANGE_COLOR);
 
         let mut context = "Pick Floder";
         if self.hades_path != "" {
@@ -295,7 +297,7 @@ impl Application for Pannel<'_> {
         }
 
         let floder_picker =
-            button(Text::new(context).font(YY_FONT)).on_press(Message::FloderPickPressed);
+            button(Text::new(context).font(YY_FONT).size(TIP_SIZE)).on_press(Message::FloderPickPressed);
 
         let line = row![text, floder_picker]
             .spacing(24)
@@ -312,6 +314,7 @@ impl Application for Pannel<'_> {
         let always_fishing_point_tip = Tooltip::new(
             Text::new(self.assemble.always_fishing_point_charism.borrow().name)
                 .font(YY_FONT)
+                .size(FONT_SIZE)
                 .style(ORANGE_COLOR),
             self.assemble
                 .always_fishing_point_charism
@@ -335,6 +338,7 @@ impl Application for Pannel<'_> {
         let catch_better_fish_tip = Tooltip::new(
             Text::new(self.assemble.catch_better_fish_charism.borrow().name)
                 .font(YY_FONT)
+                .size(FONT_SIZE)
                 .style(ORANGE_COLOR),
             self.assemble.catch_better_fish_charism.borrow().description,
             TIP_POSITION,
@@ -355,6 +359,8 @@ impl Application for Pannel<'_> {
         let easier_to_pick_up_tip = Tooltip::new(
             Text::new(self.assemble.easier_to_pick_up_charism.borrow().name)
                 .font(YY_FONT)
+                .size(FONT_SIZE)
+                .size(FONT_SIZE)
                 .style(ORANGE_COLOR),
             self.assemble.easier_to_pick_up_charism.borrow().description,
             TIP_POSITION,
@@ -380,6 +386,7 @@ impl Application for Pannel<'_> {
                     .name,
             )
             .font(YY_FONT)
+            .size(FONT_SIZE)
             .style(ORANGE_COLOR),
             self.assemble
                 .gifit_trait_quick_upgrade_charism
@@ -406,6 +413,7 @@ impl Application for Pannel<'_> {
         let free_store_exchange_tip = Tooltip::new(
             Text::new(self.assemble.free_store_exchange_charism.borrow().name)
                 .font(YY_FONT)
+                .size(FONT_SIZE)
                 .style(ORANGE_COLOR),
             self.assemble
                 .free_store_exchange_charism
@@ -429,6 +437,7 @@ impl Application for Pannel<'_> {
         let always_hero_raity_trait_tip = Tooltip::new(
             Text::new(self.assemble.always_hero_raity_trait_charism.borrow().name)
                 .font(YY_FONT)
+                .size(FONT_SIZE)
                 .style(ORANGE_COLOR),
             self.assemble
                 .always_hero_raity_trait_charism
@@ -454,7 +463,7 @@ impl Application for Pannel<'_> {
                 shaping: text::Shaping::Basic,
             })
             .font(YY_FONT);
-        let rollback_text = Text::new("RollBack").font(YY_FONT).style(GREEN_COLOR);
+        let rollback_text = Text::new("RollBack").font(YY_FONT).size(FONT_SIZE).style(GREEN_COLOR);
         let rollback = row![rollback_checkbox, rollback_text];
 
         // toast

@@ -8,6 +8,7 @@ use std::path::Path;
 
 use crate::components::CustomError;
 
+/// Check if file is being read and written at the same time.
 fn check_same_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let path_to_read = Path::new(file_path);
     let handle = Handle::from_path(path_to_read)?;
@@ -24,6 +25,7 @@ fn check_same_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Read content from file.
 pub fn read_from_file(file_path: &str) -> Result<String, Box<dyn Error>> {
     check_same_file(file_path)?;
     let file = File::open(Path::new(file_path))?;
@@ -34,6 +36,7 @@ pub fn read_from_file(file_path: &str) -> Result<String, Box<dyn Error>> {
     Ok(content)
 }
 
+/// Write content to file.
 pub fn write_to_file(file_path: &str, content: &str) -> Result<(), Box<dyn Error>> {
     check_same_file(file_path)?;
 
@@ -43,6 +46,7 @@ pub fn write_to_file(file_path: &str, content: &str) -> Result<(), Box<dyn Error
     Ok(())
 }
 
+/// Copy a directory from src to dest.
 fn copy_directory(src: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     if !src.is_dir() {
         return Err(CustomError::new("source is not a directory"));
@@ -67,6 +71,7 @@ fn copy_directory(src: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Copy a file from src to dest.
 fn copy_file(src: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     if !src.is_file() {
         return Err(CustomError::new("source is not a directory"));
@@ -80,18 +85,7 @@ fn copy_file(src: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// remove
-fn backup_directory(src_dire: &Path, dest_dire: &Path) -> Result<(), Box<dyn Error>> {
-    copy_directory(src_dire, dest_dire)?;
-    Ok(())
-}
-
-// remove
-fn backup_file(src_file: &Path, dest_file: &Path) -> Result<(), Box<dyn Error>> {
-    copy_file(src_file, dest_file)?;
-    Ok(())
-}
-
+/// Backup from origin(src) to dest.
 pub fn backup_from_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     let src_path = Path::new(src);
     let dest_path = Path::new(dest);
@@ -110,9 +104,9 @@ pub fn backup_from_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     }
 
     if src_path.is_dir() {
-        backup_directory(src_path, dest_path)?;
+        copy_directory(src_path, dest_path)?;
     } else if src_path.is_file() {
-        backup_file(src_path, dest_path)?;
+        copy_file(src_path, dest_path)?;
     } else {
         let message = format!("source `{:?}`is not a directory or file", src_path);
         return Err(CustomError::new(&message));
@@ -120,6 +114,7 @@ pub fn backup_from_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Rollback src to origin(dest).
 pub fn rollback_to_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     let src_path = Path::new(src);
     let dest_path = Path::new(dest);
@@ -137,9 +132,9 @@ pub fn rollback_to_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     }
 
     if dest_path.is_dir() {
-        backup_directory(src_path, dest_path)?;
+        copy_directory(src_path, dest_path)?;
     } else if dest_path.is_file() {
-        backup_file(src_path, dest_path)?;
+        copy_file(src_path, dest_path)?;
     } else {
         let message = format!("destination `{:?}`is not a directory or file", dest_path);
         return Err(CustomError::new(&message));
@@ -147,6 +142,7 @@ pub fn rollback_to_origin(src: &str, dest: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Replace the content of file to `to` according to the `from`(regex pattern).
 pub fn replace_regex(file_path: &str, from: &str, to: &str) -> Result<(), Box<dyn Error>> {
     let file_content = read_from_file(file_path)?;
 
@@ -156,7 +152,6 @@ pub fn replace_regex(file_path: &str, from: &str, to: &str) -> Result<(), Box<dy
     }
     let modify_contnet = pattern.replace_all(file_content.as_str(), to).to_string();
 
-    
     match write_to_file(file_path, &modify_contnet) {
         Ok(()) => Ok(()),
         Err(err) => {
@@ -167,6 +162,7 @@ pub fn replace_regex(file_path: &str, from: &str, to: &str) -> Result<(), Box<dy
     }
 }
 
+/// Delete the content of file according to the `from`(regex pattern).
 pub fn delete_regex(file_path: &str, from: &str) -> Result<(), Box<dyn Error>> {
     match replace_regex(file_path, from, "") {
         Ok(()) => Ok(()),
@@ -176,6 +172,7 @@ pub fn delete_regex(file_path: &str, from: &str) -> Result<(), Box<dyn Error>> {
     }
 }
 
+/// Join a file name to path.
 pub fn join_path(hades_path: &str, file_name: &'static str) -> String {
     let path = Path::new(&hades_path);
     path.join(file_name).to_string_lossy().to_string()

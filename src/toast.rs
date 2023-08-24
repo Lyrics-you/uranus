@@ -14,7 +14,7 @@ use iced::widget::{button, column, container, horizontal_rule, horizontal_space,
 use iced::window;
 use iced::{Alignment, Element, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 
-use crate::pannel::{YY_FONT, ICON_FONT};
+use crate::panel::{YY_FONT, ICON_FONT};
 
 pub const DEFAULT_TIMEOUT: u64 = 5;
 

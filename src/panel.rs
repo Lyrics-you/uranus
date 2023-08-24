@@ -11,7 +11,7 @@ use iced::{Application, Command, Element, Length, Settings, Theme};
 
 use rfd::FileDialog;
 
-// CONST
+// font for `icon` and `font`
 pub const ICON_FONT: Font = Font::with_name("icons");
 pub const YY_FONT: Font = Font {
     family: iced::font::Family::Name("YouYuan"),
@@ -19,12 +19,12 @@ pub const YY_FONT: Font = Font {
     stretch: font::Stretch::Normal,
     monospaced: false,
 };
-
-const FONT_SIZE:f32 = 24.0;
-
+// text font size
+const FONT_SIZE: f32 = 24.0;
+// tip size and position
 const TIP_SIZE: f32 = 16.0;
 const TIP_POSITION: iced::widget::tooltip::Position = tooltip::Position::FollowCursor;
-
+// custom color
 const RED_COLOR: iced::Color =
     Color::from_rgb(120 as f32 / 255.0, 5 as f32 / 255.0, 0 as f32 / 255.0);
 const ORANGE_COLOR: iced::Color =
@@ -32,7 +32,7 @@ const ORANGE_COLOR: iced::Color =
 const GREEN_COLOR: iced::Color =
     Color::from_rgb(0 as f32 / 255.0, 180 as f32 / 255.0, 150 as f32 / 255.0);
 
-// main
+//  run iced
 pub fn pannel_main() -> iced::Result {
     let mut settings = Settings::default();
 
@@ -65,8 +65,11 @@ struct Pannel<'a> {
 }
 
 impl Pannel<'_> {
+    /// According to the value to select the corresponding checkbox for change.
     pub fn checkbox_selector(&mut self, value: bool, message: Message) {
+        // roolback checkbox should be false
         self.roolback_checkbox = false;
+        // select corresponding checkbox and charism
         let (checkbox_ptr, charism) = match message {
             Message::AlwaysFishingPointChecked(_) => (
                 &mut self.always_fishing_point_checkbox,
@@ -96,8 +99,10 @@ impl Pannel<'_> {
                 return;
             }
         };
+        // change checkbox to value
         *checkbox_ptr = value;
         if value {
+            // checked, apply
             match charism.apply() {
                 Ok(_) => {
                     log::info!("Pannel: {} apply success.", charism.name);
@@ -118,6 +123,7 @@ impl Pannel<'_> {
                 }
             }
         } else {
+            // uncheck, rollback
             match charism.rollback(true) {
                 Ok(_) => {
                     log::info!("Pannel: {} rollback success.", charism.name);
@@ -219,11 +225,11 @@ impl Application for Pannel<'_> {
                     self.assemble
                         .set_hades_path(floder_path.display().to_string());
                     self.assemble.assemble_all();
-
                     log::info!("Change Path to {}", self.assemble.hades_path)
                 }
             }
             Message::ToastClose(_index) => {
+                // a little problem in remove(index)
                 // self.toasts.remove(_index);
                 self.toasts.clear();
             }
@@ -233,6 +239,7 @@ impl Application for Pannel<'_> {
             | Message::GifitTraitQuickUpgradeChecked(value)
             | Message::FreeStoreExchangeChecked(value)
             | Message::AlwaysHeroRaityTraitChecked(value) => {
+                // check hades_path
                 if self.hades_path == "" {
                     log::warn!("Pick Floder First!");
                     let toast = Toast {
@@ -247,6 +254,7 @@ impl Application for Pannel<'_> {
             }
             Message::RollbackChecked(value) => {
                 self.roolback_checkbox = value;
+                // rollback the checkbox with a value of ture
                 if value {
                     if self.always_fishing_point_checkbox {
                         self.checkbox_selector(false, Message::AlwaysFishingPointChecked(false))
@@ -277,7 +285,6 @@ impl Application for Pannel<'_> {
                 }
             }
         }
-
         Command::none()
     }
 
@@ -286,20 +293,29 @@ impl Application for Pannel<'_> {
         //     "{}/resources/hades-icon.jpg",
         //     env!("CARGO_MANIFEST_DIR")
         // ));
+
+        // image for banner
         let image =
             Image::<image::Handle>::new("resources/zagreus-icon-2.jpg").width(Length::Fixed(500.0));
 
-        let text = text("Path").size(FONT_SIZE).font(YY_FONT).style(ORANGE_COLOR);
+        // text "Path"
+        let path_text = text("Path")
+            .size(FONT_SIZE)
+            .font(YY_FONT)
+            .style(ORANGE_COLOR);
 
+        // changes button context according to the value of hades_path
         let mut context = "Pick Floder";
         if self.hades_path != "" {
             context = &self.hades_path;
         }
 
-        let floder_picker =
-            button(Text::new(context).font(YY_FONT).size(TIP_SIZE)).on_press(Message::FloderPickPressed);
+        // pick floder button
+        let floder_picker = button(Text::new(context).font(YY_FONT).size(TIP_SIZE))
+            .on_press(Message::FloderPickPressed);
 
-        let line = row![text, floder_picker]
+        // combine the path and floder_picker in a row
+        let line = row![path_text, floder_picker]
             .spacing(24)
             .align_items(iced::Alignment::Center);
 
@@ -463,7 +479,10 @@ impl Application for Pannel<'_> {
                 shaping: text::Shaping::Basic,
             })
             .font(YY_FONT);
-        let rollback_text = Text::new("RollBack").font(YY_FONT).size(FONT_SIZE).style(GREEN_COLOR);
+        let rollback_text = Text::new("RollBack")
+            .font(YY_FONT)
+            .size(FONT_SIZE)
+            .style(GREEN_COLOR);
         let rollback = row![rollback_checkbox, rollback_text];
 
         // toast
@@ -488,6 +507,7 @@ impl Application for Pannel<'_> {
             .center_y()
             // .padding(24)
             ;
+        // toast manager
         toast::Manager::new(container, &self.toasts, Message::ToastClose)
             .timeout(1)
             .into()
